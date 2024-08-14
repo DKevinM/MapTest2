@@ -1,25 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Leaflet Map with Embedded HTML</title>
+    <title>Leaflet Map with Overlay</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
         #map {
-            height: 500px;
+            height: 600px;
         }
         .custom-html-overlay {
-            background-color: white;
+            background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent background */
             padding: 10px;
             border: 1px solid black;
-            width: 400px;  /* Adjust as necessary */
-            height: 300px; /* Adjust as necessary */
-        }
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
+            border-radius: 5px;
         }
     </style>
 </head>
@@ -28,21 +22,66 @@
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        var map = L.map('map').setView([51.505, -0.09], 13);
+        // Initialize the map
+        var map = L.map('map').setView([56.1304, -106.3468], 4); // Centered on Canada
 
+        // Add a tile layer (e.g., OpenStreetMap)
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        var customControl = L.Control.extend({
+        // Create a custom control with an iframe
+        var AnimationControl = L.Control.extend({
             onAdd: function(map) {
                 var div = L.DomUtil.create('div', 'custom-html-overlay');
-                div.innerHTML = '<iframe src="https://eer.cmc.ec.gc.ca/mandats/AutoSim/Fire/latest/Canada/latest/img/Canada/anim.html"></iframe>';
+                div.style.width = '450px';  // Adjust width as needed
+                div.style.height = '350px'; // Adjust height as needed
+
+                div.innerHTML = '<iframe src="https://eer.cmc.ec.gc.ca/mandats/AutoSim/Fire/latest/Canada/latest/img/Canada/anim.html" width="100%" height="100%" frameborder="0"></iframe>';
+                
+                // Prevent map interactions when hovering over the iframe
+                L.DomEvent.disableClickPropagation(div);
+                L.DomEvent.disableScrollPropagation(div);
+
                 return div;
+            },
+
+            onRemove: function(map) {
+                // Nothing to do here
             }
         });
 
-        map.addControl(new customControl({ position: 'topright' }));
+        // Add the control to the map (position can be 'topleft', 'topright', 'bottomleft', or 'bottomright')
+        map.addControl(new AnimationControl({ position: 'topright' }));
+
+        // After initializing the map as shown above
+
+// Create the iframe element
+var iframe = document.createElement('iframe');
+iframe.src = 'https://eer.cmc.ec.gc.ca/mandats/AutoSim/Fire/latest/Canada/latest/img/Canada/anim.html';
+iframe.style.position = 'absolute';
+iframe.style.top = '10px';    // Adjust as needed
+iframe.style.right = '10px';  // Adjust as needed
+iframe.style.width = '450px'; // Adjust width
+iframe.style.height = '350px';// Adjust height
+iframe.style.border = '1px solid black';
+iframe.style.backgroundColor = 'white';
+iframe.style.borderRadius = '5px';
+iframe.style.zIndex = '1000';
+
+// Prevent map interactions when hovering over the iframe
+iframe.addEventListener('mousedown', function(e) {
+    L.DomEvent.stopPropagation(e);
+});
+iframe.addEventListener('wheel', function(e) {
+    L.DomEvent.stopPropagation(e);
+});
+
+// Append the iframe to the map container
+map.getContainer().appendChild(iframe);
+
+        
     </script>
 </body>
 </html>
