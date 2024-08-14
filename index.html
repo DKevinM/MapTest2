@@ -1,87 +1,43 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Leaflet Map with Overlay</title>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <style>
-        #map {
-            height: 600px;
-        }
-        .custom-html-overlay {
-            background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent background */
-            padding: 10px;
-            border: 1px solid black;
-            border-radius: 5px;
-        }
-    </style>
-</head>
-<body>
-    <div id="map"></div>
+const axios = require('axios');
+const fs = require('fs');
+const AdmZip = require('adm-zip');
+const shapefile = require('shapefile');
 
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script>
-        // Initialize the map
-        var map = L.map('map').setView([56.1304, -106.3468], 4); // Centered on Canada
+async function automateProcess() {
+    // Step 1: Download the Shapefile
+    const url = 'https://eer.cmc.ec.gc.ca/mandats/AutoSim/Fire/latest/Canada/latest/shp/shp_Canada.zip';
+    const path = './shp_Canada.zip';
 
-        // Add a tile layer (e.g., OpenStreetMap)
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
-
-        // Create a custom control with an iframe
-        var AnimationControl = L.Control.extend({
-            onAdd: function(map) {
-                var div = L.DomUtil.create('div', 'custom-html-overlay');
-                div.style.width = '450px';  // Adjust width as needed
-                div.style.height = '350px'; // Adjust height as needed
-
-                div.innerHTML = '<iframe src="https://eer.cmc.ec.gc.ca/mandats/AutoSim/Fire/latest/Canada/latest/img/Canada/anim.html" width="100%" height="100%" frameborder="0"></iframe>';
-                
-                // Prevent map interactions when hovering over the iframe
-                L.DomEvent.disableClickPropagation(div);
-                L.DomEvent.disableScrollPropagation(div);
-
-                return div;
-            },
-
-            onRemove: function(map) {
-                // Nothing to do here
-            }
+    await axios({
+        method: 'GET',
+        url: url,
+        responseType: 'stream',
+    }).then(response => {
+        response.data.pipe(fs.createWriteStream(path));
+        return new Promise((resolve, reject) => {
+            response.data.on('end', () => resolve('File downloaded successfully'));
+            response.data.on('error', reject);
         });
+    });
 
-        // Add the control to the map (position can be 'topleft', 'topright', 'bottomleft', or 'bottomright')
-        map.addControl(new AnimationControl({ position: 'topright' }));
+    // Step 2: Extract the Shapefile
+    const zip = new AdmZip(path);
+    zip.extractAllTo('./shapefiles', true);
 
-        // After initializing the map as shown above
+    // Step 3: Convert Shapefile to GeoJSON
+    const source = './shapefiles/shp_Canada.shp';
+    const destination = './shapefiles/canada.geojson';
 
-// Create the iframe element
-var iframe = document.createElement('iframe');
-iframe.src = 'https://eer.cmc.ec.gc.ca/mandats/AutoSim/Fire/latest/Canada/latest/img/Canada/anim.html';
-iframe.style.position = 'absolute';
-iframe.style.top = '10px';    // Adjust as needed
-iframe.style.right = '10px';  // Adjust as needed
-iframe.style.width = '450px'; // Adjust width
-iframe.style.height = '350px';// Adjust height
-iframe.style.border = '1px solid black';
-iframe.style.backgroundColor = 'white';
-iframe.style.borderRadius = '5px';
-iframe.style.zIndex = '1000';
+    await shapefile.open(source)
+        .then(source => source.read()
+            .then(function log(result) {
+                if (result.done) return;
+                fs.writeFileSync(destination, JSON.stringify(result.value));
+                return source.read().then(log);
+            }))
+        .catch(console.error);
 
-// Prevent map interactions when hovering over the iframe
-iframe.addEventListener('mousedown', function(e) {
-    L.DomEvent.stopPropagation(e);
-});
-iframe.addEventListener('wheel', function(e) {
-    L.DomEvent.stopPropagation(e);
-});
+    console.log('Process completed successfully');
+}
 
-// Append the iframe to the map container
-map.getContainer().appendChild(iframe);
-
-        
-    </script>
-</body>
-</html>
+automateProcess().catch(console.error);
