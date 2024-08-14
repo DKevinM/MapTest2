@@ -1,0 +1,21 @@
+// Initialize your Leaflet map
+var map = L.map('map').setView([51.505, -0.09], 13);
+
+// Add a tile layer (optional, depending on your map setup)
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+}).addTo(map);
+
+// Create and style your custom iframe element
+var iframe = document.createElement('iframe');
+iframe.src = 'https://eer.cmc.ec.gc.ca/mandats/AutoSim/Fire/latest/Canada/latest/img/Canada/anim.html';
+iframe.style.position = 'absolute';
+iframe.style.top = '20px';
+iframe.style.right = '20px';
+iframe.style.width = '400px';  // Adjust width as needed
+iframe.style.height = '300px'; // Adjust height as needed
+iframe.style.border = 'none'; // Optional: Remove border
+iframe.style.zIndex = '1000';  // Ensure it stays on top of the map
+
+// Append the iframe to the map container
+map.getContainer().appendChild(iframe);
