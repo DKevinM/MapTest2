@@ -1,21 +1,41 @@
-// Initialize your Leaflet map
-var map = L.map('map').setView([51.505, -0.09], 13);
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Leaflet Map</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 500px;
+        }
+        .custom-html-overlay {
+            background-color: white;
+            padding: 10px;
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
 
-// Add a tile layer (optional, depending on your map setup)
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-}).addTo(map);
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        var map = L.map('map').setView([51.505, -0.09], 13);
 
-// Create and style your custom iframe element
-var iframe = document.createElement('iframe');
-iframe.src = 'https://eer.cmc.ec.gc.ca/mandats/AutoSim/Fire/latest/Canada/latest/img/Canada/anim.html';
-iframe.style.position = 'absolute';
-iframe.style.top = '20px';
-iframe.style.right = '20px';
-iframe.style.width = '400px';  // Adjust width as needed
-iframe.style.height = '300px'; // Adjust height as needed
-iframe.style.border = 'none'; // Optional: Remove border
-iframe.style.zIndex = '1000';  // Ensure it stays on top of the map
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+        }).addTo(map);
 
-// Append the iframe to the map container
-map.getContainer().appendChild(iframe);
+        var customControl = L.Control.extend({
+            onAdd: function(map) {
+                var div = L.DomUtil.create('div', 'custom-html-overlay');
+                div.innerHTML = '<h2>Hello World!</h2>';
+                return div;
+            }
+        });
+
+        map.addControl(new customControl({ position: 'topright' }));
+    </script>
+</body>
+</html>
